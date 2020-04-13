@@ -2,6 +2,7 @@
 # Python x64
 # gvim x64
 # cmake x64
+# Visual studio
 
 VIMDIR=vim82
 MAINDIR=`pwd`
