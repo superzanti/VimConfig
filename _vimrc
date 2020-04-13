@@ -536,7 +536,9 @@ let g:syntastic_python_checkers = ['flake8', 'pylint']
 
 " => youCompleteMe
 """"""""""""""""""
-let g:ycm_python_binary_path = 'python'
+set pythonthreedll=C:\Users\Seth\AppData\Local\Programs\Python\Python37\python37.dll
+set pythonthreehome=C:\Users\Seth\AppData\Local\Programs\Python\Python37
+let g:ycm_python_binary_path = 'C:\Users\Seth\AppData\Local\Programs\Python\Python37\python.exe'
 
 " => nerdcommenter
 """"""""""""""""""
