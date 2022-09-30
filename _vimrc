@@ -112,11 +112,15 @@ set guioptions-=T
 set guioptions-=r
 set guioptions-=L
 
+" Scroll wheel moves screen up and dwon, not cursor
+set mouse=a
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Enable syntax highlighting
 syntax enable
+syntax on
 
 set t_Co=256
 " hybrid colorscheme
@@ -131,9 +135,6 @@ if has("gui_running")
     set guitablabel=%M\ %t
 endif
 
-" Change the color of the line number column
-"hi LineNr ctermfg=darkgrey
-
 " Set utf8 as standard encoding and en_US as the standard language
 set encoding=utf8
 
@@ -143,6 +144,25 @@ set ffs=unix,dos,mac
 " Set the default font
 set guifont=Source\ Code\ Pro\ for\ Powerline:h12:cANSI
 
+" Change the color of the line number column
+" terminal mode only
+"hi LineNr ctermfg=darkgrey
+" gui mode only
+highlight LineNr guifg=#aaaaaa
+highlight LineNr guibg=#222222
+
+" Highlight trailing whitespace
+highlight ExtraWhitespace ctermbg=darkgrey guibg=#555555
+match ExtraWhitespace /\s\+$/
+
+" change between relative and absolute line numbers
+set number
+
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &nu && mode() != "i" | set rnu   | endif
+  autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu                  | set nornu | endif
+augroup END
 
 " Function to increase the font size by 1
 function! FontSizePlus ()
@@ -381,7 +401,7 @@ set grepprg=grep\ -nH\ $*
 map <leader>cc :botright cope<cr>
 map <leader>co ggVGy:tabnew<cr>:set syntax=qf<cr>pgg
 map <leader>n :cn<cr>
-map <leader>p :cp<cr>
+map <leader>r :cp<cr>
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -391,7 +411,7 @@ map <leader>p :cp<cr>
 set spelllang=en
 
 " set the location of the spellfile
-set spellfile=$VIM\vimfiles\spell\en.utf-8.add
+set spellfile="$VIM\\vim81\\spell\\en.utf-8.add"
 
 " Pressing ,ss will toggle and untoggle spell checking
 map <leader>ss :setlocal spell!<cr>
@@ -421,6 +441,10 @@ map <leader>pp :setlocal paste!<cr>
 " empty tex files by default load as plaintext.
 " I want all tex files to load vim-latex-suite.
 let g:tex_flavor='latex'
+
+"" start with no folds
+autocmd BufWinEnter * silent! :%foldopen!
+set foldmethod=syntax
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -487,6 +511,57 @@ endfunction
 " => Plugin Configurations
 """"""""""""""""""""""""""""""
 
+" => md img paste
+"""""""""""""""""
+
+autocmd FileType markdown nmap <buffer><silent> <leader>i :call mdip#MarkdownClipboardImage()<CR>
+" there are some defaults for image directory and image name, you can change them
+" let g:mdip_imgdir = 'img'
+" let g:mdip_imgname = 'image'
+
+" => vim-biblegateway
+"""""""""""""""""""""
+let g:BiblegatewayVersion = "NLT"
+let g:BiblegatewayNumbers = 0
+let g:BiblegatewayAscii = 0
+
+nnoremap <leader>b y :call bible#InsertBible()<CR>
+vnoremap <leader>b y :call bible#InsertBible(@")<CR>
+vnoremap <leader>bn y :call bible#InsertBible(@", "NLT", 1, 0)<CR>
+
+" add C:\Program Files\Vim\vim82\bundle\vim-bible-master\diatheke to path
+" install diatheke into folder above from https://wiki.crosswire.org/Frontends:Diatheke
+" working link as of may2022: ftp://ftp.crosswire.org/pub/sword/frontend/diatheke/diatheke-4.0-win32.zip
+" Add git bash stuff to path for sed and whatnot:
+" C:\Users\<user>\AppData\Local\Programs\Git\usr\bin
+
+" => vimwiki
+""""""""""""
+set nocompatible
+filetype plugin on
+
+let g:vimwiki_list = [{'path': 'C:\Users\smiers\Nextcloud\WorkBackup\BCT\Wiki',
+                      \ 'syntax': 'markdown', 'ext': '.md'},
+                      \ {'path': 'C:\Users\smiers\Nextcloud\PersonalKeep\Notes',
+                      \ 'syntax': 'markdown', 'ext': '.md'}]
+
+
+function! VimwikiSearchQuery(...) abort
+    let vwquery = exists('a:1') && a:1 != "" ? a:1 : input("Query: ")
+    execute 'VimwikiSearch /' . vwquery '/'
+endfunction
+
+" open a default file of the wiki on vim startup
+au VimEnter * if eval("@%") == "" | e C:\Users\smiers\Nextcloud\WorkBackup\BCT\Wiki\index.md | endif
+
+" search wiki
+nnoremap <leader>wf :call VimwikiSearchQuery()<CR>
+
+" => markdown-preview
+"""""""""""""""""""""
+" Open markdown files with Chrome.
+autocmd BufEnter *.md exe 'noremap <F5> :!start C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe "%:p"<CR>'
+
 " => vim-airline
 """"""""""""""""
 " set the airline powerline font
@@ -495,7 +570,7 @@ let g:airline_powerline_fonts = 1
 " => vim-gitgutter
 """"""""""""""""""
 " Set the path to git
-let g:gitgutter_git_executable = 'C:\Program Files\Git\bin\git.exe'
+" let g:gitgutter_git_executable = 'C:\Program Files\Git\bin\git.exe'
 
 " => vim-fugitive
 """""""""""""""""
@@ -516,8 +591,20 @@ map <C-n> :NERDTreeToggle<CR>
 " close vim if nerdtree is the only thing left
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 
+" => vim-ale
+""""""""""""
+" linter used primarily for VHDL/Verilog
+let b:ale_fixers = ['remove_trailing_lines', 'trim_whitespace']
+let b:ale_linters = ['xvlog', 'xvhdl']
+let g:ale_linters_explicit = 1
+let g:ale_lint_on_text_changed = 'never'
+let g:ale_lint_on_insert_leave = 0
+let g:ale_lint_on_enter = 0
+let g:ale_vhdl_xvhdl_executable = 'C:\Xilinx\Vivado\2016.2\bin\xvhdl.bat'
+
 " => syntastic
 """"""""""""""
+" Linter that I primarily use for Python
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_open = 1
@@ -531,14 +618,22 @@ let g:syntastic_auto_loc_list=1
 nnoremap <silent> <F7> :SyntasticCheck<CR>  
 " what should syntastic use to check python
 let g:syntastic_python_checkers = ['flake8', 'pylint']
+
 " set python path
-" let $PYTHONPATH = "C:\\Python27\\Lib;C:\\Python27\\DLLs;C:\\Python27\\Lib\\lib-tk"
+" let $PYTHONPATH = "C:\\Python27\\Lib;C:\\Python27\\DLLs;C:\\Python27\\Lib\\lib-tk
+
+" let $PYTHONPATH = "C:\Program Files\Python\Python310\Lib;C:\Program Files\Python\Python310\DLLs"
+
 
 " => youCompleteMe
 """"""""""""""""""
-set pythonthreedll=C:\Users\Seth\AppData\Local\Programs\Python\Python37\python37.dll
-set pythonthreehome=C:\Users\Seth\AppData\Local\Programs\Python\Python37
-let g:ycm_python_binary_path = 'C:\Users\Seth\AppData\Local\Programs\Python\Python37\python.exe'
+" C:\Program Files\Python\Python310\python310.dll
+" C:\Program Files\Python\Python310
+" C:\Program Files\Python\Python310\python.exe
+
+" set pythonthreedll="C:\Program Files\Python\Python310\python310.dll"
+" set pythonthreehome="C:\Program Files\Python\Python310"
+" let g:ycm_python_binary_path = "C:\Programs Files\Python\Python310\python.exe"
 
 " => nerdcommenter
 """"""""""""""""""
@@ -565,3 +660,7 @@ let g:indent_guides_enable_on_vim_startup = 1
 
 " => vim-snippets
 """""""""""""""""
+
+" => SimplylFold
+"""""""""""""""""
+let g:SimpylFold_docstring_preview = 1
